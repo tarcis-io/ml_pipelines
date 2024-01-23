@@ -1,0 +1,768 @@
+{
+  "doc_type": "pipeline",
+  "version": "3.0",
+  "json_schema": "http://api.dataplatform.ibm.com/schemas/common-pipeline/pipeline-flow/pipeline-flow-v3-schema.json",
+  "id": "elyra-auto-generated-pipeline",
+  "primary_pipeline": "primary",
+  "pipelines": [
+    {
+      "id": "primary",
+      "nodes": [
+        {
+          "id": "d81edabb-a6a9-4835-8826-d79b2faaa44b",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/download_dataset.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "download_dataset.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 160,
+              "y_pos": 320,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              }
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "c977a413-5eea-4e77-adee-a28c8c613c3c",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/prepare_dataset.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "prepare_dataset.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 500,
+              "y_pos": 320,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              },
+              "links": [
+                {
+                  "id": "2bae036a-606e-4d5e-adde-4e05f4c3d667",
+                  "node_id_ref": "d81edabb-a6a9-4835-8826-d79b2faaa44b",
+                  "port_id_ref": "outPort"
+                }
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "be7278bf-250b-4bcb-b847-61f8cbaef77c",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/create_model.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "create_model.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 500,
+              "y_pos": 440,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              }
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "e15bf29f-b51b-4ca0-9eac-c032af0d27ac",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/train_model.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "train_model.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 840,
+              "y_pos": 320,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              },
+              "links": [
+                {
+                  "id": "f05f08d0-7023-4715-82b9-118700bd6315",
+                  "node_id_ref": "c977a413-5eea-4e77-adee-a28c8c613c3c",
+                  "port_id_ref": "outPort"
+                },
+                {
+                  "id": "05d49678-bcae-45ad-b4ed-6ce56b95fa25",
+                  "node_id_ref": "be7278bf-250b-4bcb-b847-61f8cbaef77c",
+                  "port_id_ref": "outPort"
+                }
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "427b8d0a-d14d-43f4-8ecb-707183ac1ac1",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/evaluate_model.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "evaluate_model.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 1180,
+              "y_pos": 320,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              },
+              "links": [
+                {
+                  "id": "6f4d25c4-8fb6-43a0-9df4-5e40e757cad0",
+                  "node_id_ref": "e15bf29f-b51b-4ca0-9eac-c032af0d27ac",
+                  "port_id_ref": "outPort"
+                }
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "8fba3eab-5f85-46b8-b518-4020bb59ab6b",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "pipeline_parameters": [
+                "s3_service_name",
+                "s3_endpoint_url",
+                "s3_access_key_id",
+                "s3_secret_access_key",
+                "s3_region",
+                "s3_bucket"
+              ],
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [
+                {
+                  "env_var": "s3_service_name"
+                },
+                {
+                  "env_var": "s3_endpoint_url"
+                },
+                {
+                  "env_var": "s3_access_key_id"
+                },
+                {
+                  "env_var": "s3_secret_access_key"
+                },
+                {
+                  "env_var": "s3_region"
+                },
+                {
+                  "env_var": "s3_bucket"
+                }
+              ],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/upload_artifacts.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "upload_artifacts.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 1520,
+              "y_pos": 320,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              },
+              "links": [
+                {
+                  "id": "9e83ed21-43b2-4bf2-8ae0-ee32569a8534",
+                  "node_id_ref": "427b8d0a-d14d-43f4-8ecb-707183ac1ac1",
+                  "port_id_ref": "outPort"
+                }
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "9343a7d0-7e01-4349-b9ff-e0ed35e651ec",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "pipeline_parameters": [
+                "s3_service_name",
+                "s3_endpoint_url",
+                "s3_access_key_id",
+                "s3_secret_access_key",
+                "s3_region",
+                "s3_bucket"
+              ],
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [
+                {
+                  "env_var": "s3_service_name"
+                },
+                {
+                  "env_var": "s3_endpoint_url"
+                },
+                {
+                  "env_var": "s3_access_key_id"
+                },
+                {
+                  "env_var": "s3_secret_access_key"
+                },
+                {
+                  "env_var": "s3_region"
+                },
+                {
+                  "env_var": "s3_bucket"
+                }
+              ],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/upload_model.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "upload_model.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 1520,
+              "y_pos": 440,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              },
+              "links": [
+                {
+                  "id": "0237a6cc-1013-45fd-9ae6-7b70743519e6",
+                  "node_id_ref": "427b8d0a-d14d-43f4-8ecb-707183ac1ac1",
+                  "port_id_ref": "outPort"
+                }
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "1d9a3a44-8415-47ae-a481-7366e65d0f61",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "label": "",
+            "component_parameters": {
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/delete_artifacts.py"
+            },
+            "ui_data": {
+              "label": "delete_artifacts.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 1860,
+              "y_pos": 320,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              },
+              "links": [
+                {
+                  "id": "d7504cac-d355-41a2-9374-8ee885d6e222",
+                  "node_id_ref": "8fba3eab-5f85-46b8-b518-4020bb59ab6b",
+                  "port_id_ref": "outPort"
+                },
+                {
+                  "id": "27f22483-2698-4f35-96e6-f7bd398edf64",
+                  "node_id_ref": "9343a7d0-7e01-4349-b9ff-e0ed35e651ec",
+                  "port_id_ref": "outPort"
+                }
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "app_data": {
+        "ui_data": {
+          "comments": [
+            {
+              "id": "666798ea-b296-4c06-addc-8e87fbe24419",
+              "x_pos": 20,
+              "y_pos": 140,
+              "width": 300,
+              "height": 80,
+              "content": "**download_dataset.py**\n\n**Downloads the cats_and_dogs dataset.**",
+              "associated_id_refs": [
+                {
+                  "id": "16f256c6-3b5d-4940-bc3a-116b9d88898e",
+                  "node_ref": "d81edabb-a6a9-4835-8826-d79b2faaa44b"
+                }
+              ]
+            },
+            {
+              "id": "420ab424-165d-4f58-9168-773b8851f543",
+              "x_pos": 360,
+              "y_pos": 140,
+              "width": 300,
+              "height": 80,
+              "content": "**prepare_dataset.py**\n\n**Prepares the cats_and_dogs dataset for training.**",
+              "associated_id_refs": [
+                {
+                  "id": "b8db89cc-46a7-460e-a486-708335735e11",
+                  "node_ref": "c977a413-5eea-4e77-adee-a28c8c613c3c"
+                }
+              ]
+            },
+            {
+              "id": "e58a7b4e-4135-4814-8bd3-24e4c67d4f79",
+              "x_pos": 360,
+              "y_pos": 580,
+              "width": 300,
+              "height": 80,
+              "content": "**create_model.py**\n\n**Creates the Convolutional Neural Network model for binary image classification.**",
+              "associated_id_refs": [
+                {
+                  "id": "16fd7385-4664-4e85-8565-9f4db3e5a0c4",
+                  "node_ref": "be7278bf-250b-4bcb-b847-61f8cbaef77c"
+                }
+              ]
+            },
+            {
+              "id": "642fedf8-6775-4ab2-a950-c667dc968f10",
+              "x_pos": 700,
+              "y_pos": 140,
+              "width": 300,
+              "height": 80,
+              "content": "**train_model.py**\n\n**Trains the model using the cats_and_dogs dataset.**",
+              "associated_id_refs": [
+                {
+                  "id": "e1d01d3d-0608-4a63-87d3-49ba828dcdc5",
+                  "node_ref": "e15bf29f-b51b-4ca0-9eac-c032af0d27ac"
+                }
+              ]
+            },
+            {
+              "id": "61b70bee-a627-456b-a3d9-2760f17c5873",
+              "x_pos": 1040,
+              "y_pos": 580,
+              "width": 300,
+              "height": 80,
+              "content": "**evaluate_model.py**\n\n**Evaluates the model using the cats_and_dogs test dataset.**",
+              "associated_id_refs": [
+                {
+                  "id": "1238fd7c-0394-41ee-a3c6-c918684d4d79",
+                  "node_ref": "427b8d0a-d14d-43f4-8ecb-707183ac1ac1"
+                }
+              ]
+            },
+            {
+              "id": "b0af8f6b-9930-4419-a3b4-dbe20d7f7b84",
+              "x_pos": 1380,
+              "y_pos": 20,
+              "width": 380,
+              "height": 200,
+              "content": "**upload_artifacts.py**\n\n**Uploads the pipeline artifacts to the s3 bucket.**\n\nPipeline parameters:\n* s3_service_name (str)\n* s3_endpoint_url (str)\n* s3_access_key_id (str)\n* s3_secret_access_key (str)\n* s3_region (str)\n* s3_bucket (str)",
+              "associated_id_refs": [
+                {
+                  "id": "a6feb8ea-ff9d-4a21-8d9a-691c5129e8ac",
+                  "node_ref": "8fba3eab-5f85-46b8-b518-4020bb59ab6b"
+                }
+              ]
+            },
+            {
+              "id": "684ac393-100d-4a4f-b0f0-d81005999949",
+              "x_pos": 1380,
+              "y_pos": 580,
+              "width": 380,
+              "height": 200,
+              "content": "**upload_model.py**\n\n**Uploads the model for deployment in the OpenVINO format.**\n\nPipeline parameters:\n* s3_service_name (str)\n* s3_endpoint_url (str)\n* s3_access_key_id (str)\n* s3_secret_access_key (str)\n* s3_region (str)\n* s3_bucket (str)",
+              "associated_id_refs": [
+                {
+                  "id": "e3a3bd2a-7f5c-4aa9-b573-bfe406517633",
+                  "node_ref": "9343a7d0-7e01-4349-b9ff-e0ed35e651ec"
+                }
+              ]
+            },
+            {
+              "id": "b9be99e4-dc8c-4bd6-a8a3-04124ce60ebd",
+              "x_pos": 1890,
+              "y_pos": 140,
+              "width": 300,
+              "height": 80,
+              "content": "**delete_artifacts.py**\n\n**Deletes the pipeline artifacts.**",
+              "associated_id_refs": [
+                {
+                  "id": "251c9623-fc17-4916-940b-da825fbb5da9",
+                  "node_ref": "1d9a3a44-8415-47ae-a481-7366e65d0f61"
+                }
+              ]
+            }
+          ]
+        },
+        "version": 8,
+        "runtime_type": "KUBEFLOW_PIPELINES",
+        "properties": {
+          "name": "02_model_training",
+          "runtime": "Data Science Pipelines",
+          "pipeline_defaults": {
+            "kubernetes_tolerations": [],
+            "kubernetes_shared_mem_size": {},
+            "kubernetes_pod_annotations": [],
+            "kubernetes_pod_labels": [],
+            "mounted_volumes": [
+              {
+                "path": "/pipeline",
+                "pvc_name": "02-model-training-pvc",
+                "read_only": false
+              }
+            ],
+            "env_vars": [],
+            "kubernetes_secrets": [],
+            "runtime_image": "quay.io/modh/runtime-images@sha256:58d45c4313097ccc4a8f2c81b30a5861cb51f0aa468a3bb66c5bb1ef16526c6b",
+            "cos_object_prefix": "ml_pipelines/02_model_training"
+          },
+          "description": "Model Training Pipeline",
+          "pipeline_parameters": [
+            {
+              "name": "s3_service_name",
+              "description": "The name of the s3 service. It should be 's3'.",
+              "default_value": {
+                "type": "String",
+                "value": "s3"
+              },
+              "required": true
+            },
+            {
+              "name": "s3_endpoint_url",
+              "description": "The url of the s3 endpoint.",
+              "default_value": {
+                "type": "String",
+                "value": ""
+              },
+              "required": true
+            },
+            {
+              "name": "s3_access_key_id",
+              "description": "The access key id for authentication.",
+              "default_value": {
+                "type": "String",
+                "value": ""
+              },
+              "required": true
+            },
+            {
+              "name": "s3_secret_access_key",
+              "description": "The secret access key for authentication.",
+              "default_value": {
+                "type": "String",
+                "value": ""
+              },
+              "required": true
+            },
+            {
+              "name": "s3_region",
+              "description": "The region where the s3 bucket is located.",
+              "default_value": {
+                "type": "String",
+                "value": ""
+              },
+              "required": true
+            },
+            {
+              "name": "s3_bucket",
+              "description": "The s3 bucket where the directory will be uploaded.",
+              "default_value": {
+                "type": "String",
+                "value": ""
+              },
+              "required": true
+            }
+          ]
+        }
+      },
+      "runtime_ref": ""
+    }
+  ],
+  "schemas": []
+}

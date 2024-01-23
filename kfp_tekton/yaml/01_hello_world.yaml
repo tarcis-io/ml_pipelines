@@ -1,0 +1,330 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: 01-hello-world
+  annotations:
+    tekton.dev/output_artifacts: '{"create-hello-world-message": [{"key": "artifacts/$PIPELINERUN/create-hello-world-message/Output.tgz",
+      "name": "create-hello-world-message-Output", "path": "/tmp/outputs/Output/data"}],
+      "create-odds-or-evens-message": [{"key": "artifacts/$PIPELINERUN/create-odds-or-evens-message/Output.tgz",
+      "name": "create-odds-or-evens-message-Output", "path": "/tmp/outputs/Output/data"}],
+      "create-random-number": [{"key": "artifacts/$PIPELINERUN/create-random-number/Output.tgz",
+      "name": "create-random-number-Output", "path": "/tmp/outputs/Output/data"}]}'
+    tekton.dev/input_artifacts: '{"create-odds-or-evens-message": [{"name": "create-hello-world-message-Output",
+      "parent_task": "create-hello-world-message"}, {"name": "create-random-number-Output",
+      "parent_task": "create-random-number"}]}'
+    tekton.dev/artifact_bucket: mlpipeline
+    tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
+    tekton.dev/artifact_endpoint_scheme: http://
+    tekton.dev/artifact_items: '{"create-hello-world-message": [["Output", "$(results.Output.path)"]],
+      "create-odds-or-evens-message": [["Output", "$(results.Output.path)"]], "create-random-number":
+      [["Output", "$(results.Output.path)"]]}'
+    sidecar.istio.io/inject: "false"
+    tekton.dev/template: ''
+    pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "Hello World Pipeline",
+      "inputs": [{"name": "name", "type": "String"}, {"name": "minimum", "type": "Integer"},
+      {"name": "maximum", "type": "Integer"}], "name": "01_hello_world"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
+spec:
+  params:
+  - name: maximum
+    value: ''
+  - name: minimum
+    value: ''
+  - name: name
+    value: ''
+  pipelineSpec:
+    params:
+    - name: maximum
+    - name: minimum
+    - name: name
+    tasks:
+    - name: create-hello-world-message
+      params:
+      - name: name
+        value: $(params.name)
+      taskSpec:
+        steps:
+        - name: main
+          args:
+          - --name
+          - $(inputs.params.name)
+          - '----output-paths'
+          - $(results.Output.path)
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def create_hello_world_message(name):
+                """
+                Creates a personalized greeting message for the given name.
+
+                Parameters:
+                    - name (str) : The name for which the message is created.
+
+                Returns:
+                    - hello_world_message (str) : A personalized greeting message for the given name.
+
+                Raises:
+                    - ValueError : If the given name is empty or None.
+                """
+
+                if not name:
+
+                    raise ValueError
+
+                hello_world_message = f'Hello World, {name}!'
+
+                print(f'name                : { name }')
+                print(f'hello_world_message : { hello_world_message }')
+
+                return hello_world_message
+
+            def _serialize_str(str_value: str) -> str:
+                if not isinstance(str_value, str):
+                    raise TypeError('Value "{}" has type "{}" instead of str.'.format(
+                        str(str_value), str(type(str_value))))
+                return str_value
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Create hello world message', description='Creates a personalized greeting message for the given name.')
+            _parser.add_argument("--name", dest="name", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+            _parsed_args = vars(_parser.parse_args())
+            _output_files = _parsed_args.pop("_output_paths", [])
+
+            _outputs = create_hello_world_message(**_parsed_args)
+
+            _outputs = [_outputs]
+
+            _output_serializers = [
+                _serialize_str,
+
+            ]
+
+            import os
+            for idx, output_file in enumerate(_output_files):
+                try:
+                    os.makedirs(os.path.dirname(output_file))
+                except OSError:
+                    pass
+                with open(output_file, 'w') as f:
+                    f.write(_output_serializers[idx](_outputs[idx]))
+          image: registry.access.redhat.com/ubi9/python-311
+        params:
+        - name: name
+        results:
+        - name: Output
+          type: string
+          description: /tmp/outputs/Output/data
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Create hello
+              world message", "outputs": [{"name": "Output", "type": "String"}], "version":
+              "Create hello world message@sha256=bcadbd30a320920f6963e7ff4c4d69447c218ef897668596030ddffd7532617d"}'
+    - name: create-random-number
+      params:
+      - name: maximum
+        value: $(params.maximum)
+      - name: minimum
+        value: $(params.minimum)
+      taskSpec:
+        steps:
+        - name: main
+          args:
+          - --minimum
+          - $(inputs.params.minimum)
+          - --maximum
+          - $(inputs.params.maximum)
+          - '----output-paths'
+          - $(results.Output.path)
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def create_random_number(minimum, maximum):
+                """
+                Creates a random integer within the specified range, minimum and maximum, both included.
+
+                Parameters:
+                    - minimum (int) : The inclusive lower bound of the random number range.
+                    - maximum (int) : The inclusive upper bound of the random number range.
+
+                Returns:
+                    - random_number (int) : A randomly created integer within the specified range.
+                """
+
+                import random
+
+                random_number = random.randint(minimum, maximum)
+
+                print(f'minimum       : { minimum }')
+                print(f'maximum       : { maximum }')
+                print(f'random_number : { random_number }')
+
+                return random_number
+
+            def _serialize_int(int_value: int) -> str:
+                if isinstance(int_value, str):
+                    return int_value
+                if not isinstance(int_value, int):
+                    raise TypeError('Value "{}" has type "{}" instead of int.'.format(
+                        str(int_value), str(type(int_value))))
+                return str(int_value)
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Create random number', description='Creates a random integer within the specified range, minimum and maximum, both included.')
+            _parser.add_argument("--minimum", dest="minimum", type=int, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--maximum", dest="maximum", type=int, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+            _parsed_args = vars(_parser.parse_args())
+            _output_files = _parsed_args.pop("_output_paths", [])
+
+            _outputs = create_random_number(**_parsed_args)
+
+            _outputs = [_outputs]
+
+            _output_serializers = [
+                _serialize_int,
+
+            ]
+
+            import os
+            for idx, output_file in enumerate(_output_files):
+                try:
+                    os.makedirs(os.path.dirname(output_file))
+                except OSError:
+                    pass
+                with open(output_file, 'w') as f:
+                    f.write(_output_serializers[idx](_outputs[idx]))
+          image: registry.access.redhat.com/ubi9/python-311
+        params:
+        - name: maximum
+        - name: minimum
+        results:
+        - name: Output
+          type: string
+          description: /tmp/outputs/Output/data
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Create random
+              number", "outputs": [{"name": "Output", "type": "Integer"}], "version":
+              "Create random number@sha256=9c17fdd666edec6832a5a09d60145aab44217649168dc6b399af8e5c3314f3d6"}'
+    - name: create-odds-or-evens-message
+      params:
+      - name: create-hello-world-message-Output
+        value: $(tasks.create-hello-world-message.results.Output)
+      - name: create-random-number-Output
+        value: $(tasks.create-random-number.results.Output)
+      taskSpec:
+        steps:
+        - name: main
+          args:
+          - --hello-world-message
+          - $(inputs.params.create-hello-world-message-Output)
+          - --random-number
+          - $(inputs.params.create-random-number-Output)
+          - '----output-paths'
+          - $(results.Output.path)
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def create_odds_or_evens_message(hello_world_message, random_number):
+                """
+                Creates a game result message based on the given random number, containing the given hello world message.
+
+                Parameters:
+                    - hello_world_message (str) : The hello world message to be incorporated into the odds or evens message.
+                    - random_number       (int) : The random number used to determine the odds or evens result.
+
+                Returns:
+                    - odds_or_evens_message (str) : The message combining the hello world message and the odds or evens game result.
+
+                Raises:
+                    - ValueError : If the given hello world message is empty or None.
+                """
+
+                if not hello_world_message:
+
+                    raise ValueError
+
+                odds_or_evens_message = f"""
+                { hello_world_message }
+
+                You're odds, I'm evens...
+                Random Number : { random_number }
+
+                { 'I won! Better luck next time.' if random_number % 2 == 0 else 'You won! I like you!' }
+                """
+
+                print(f'hello_world_message   : { hello_world_message }')
+                print(f'random_number         : { random_number }')
+                print(f'odds_or_evens_message : { odds_or_evens_message }')
+
+                return odds_or_evens_message
+
+            def _serialize_str(str_value: str) -> str:
+                if not isinstance(str_value, str):
+                    raise TypeError('Value "{}" has type "{}" instead of str.'.format(
+                        str(str_value), str(type(str_value))))
+                return str_value
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Create odds or evens message', description='Creates a game result message based on the given random number, containing the given hello world message.')
+            _parser.add_argument("--hello-world-message", dest="hello_world_message", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--random-number", dest="random_number", type=int, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+            _parsed_args = vars(_parser.parse_args())
+            _output_files = _parsed_args.pop("_output_paths", [])
+
+            _outputs = create_odds_or_evens_message(**_parsed_args)
+
+            _outputs = [_outputs]
+
+            _output_serializers = [
+                _serialize_str,
+
+            ]
+
+            import os
+            for idx, output_file in enumerate(_output_files):
+                try:
+                    os.makedirs(os.path.dirname(output_file))
+                except OSError:
+                    pass
+                with open(output_file, 'w') as f:
+                    f.write(_output_serializers[idx](_outputs[idx]))
+          image: registry.access.redhat.com/ubi9/python-311
+        params:
+        - name: create-hello-world-message-Output
+        - name: create-random-number-Output
+        results:
+        - name: Output
+          type: string
+          description: /tmp/outputs/Output/data
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Create odds or
+              evens message", "outputs": [{"name": "Output", "type": "String"}], "version":
+              "Create odds or evens message@sha256=71f663054b56eeb2b85e00b62b63efe0c1f18c26a1fbedd21d31a07f6847fc2a"}'

@@ -1,0 +1,828 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: 02-model-training
+  annotations:
+    tekton.dev/output_artifacts: '{}'
+    tekton.dev/input_artifacts: '{"create-model": [{"name": "create-pvc-name", "parent_task":
+      "create-pvc"}], "delete-artifacts": [{"name": "create-pvc-name", "parent_task":
+      "create-pvc"}], "download-dataset": [{"name": "create-pvc-name", "parent_task":
+      "create-pvc"}], "evaluate-model": [{"name": "create-pvc-name", "parent_task":
+      "create-pvc"}], "prepare-dataset": [{"name": "create-pvc-name", "parent_task":
+      "create-pvc"}], "train-model": [{"name": "create-pvc-name", "parent_task": "create-pvc"}],
+      "upload-artifacts": [{"name": "create-pvc-name", "parent_task": "create-pvc"}],
+      "upload-model": [{"name": "create-pvc-name", "parent_task": "create-pvc"}]}'
+    tekton.dev/artifact_bucket: mlpipeline
+    tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
+    tekton.dev/artifact_endpoint_scheme: http://
+    tekton.dev/artifact_items: '{"create-model": [], "create-pvc": [], "delete-artifacts":
+      [], "download-dataset": [], "evaluate-model": [], "prepare-dataset": [], "train-model":
+      [], "upload-artifacts": [], "upload-model": []}'
+    sidecar.istio.io/inject: "false"
+    tekton.dev/template: ''
+    pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "Model Training Pipeline",
+      "inputs": [{"name": "s3_service_name", "type": "String"}, {"name": "s3_endpoint_url",
+      "type": "String"}, {"name": "s3_access_key_id", "type": "String"}, {"name":
+      "s3_secret_access_key", "type": "String"}, {"name": "s3_region", "type": "String"},
+      {"name": "s3_bucket", "type": "String"}], "name": "02_model_training"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
+spec:
+  params:
+  - name: s3_access_key_id
+    value: ''
+  - name: s3_bucket
+    value: ''
+  - name: s3_endpoint_url
+    value: ''
+  - name: s3_region
+    value: ''
+  - name: s3_secret_access_key
+    value: ''
+  - name: s3_service_name
+    value: ''
+  pipelineSpec:
+    params:
+    - name: s3_access_key_id
+    - name: s3_bucket
+    - name: s3_endpoint_url
+    - name: s3_region
+    - name: s3_secret_access_key
+    - name: s3_service_name
+    tasks:
+    - name: create-pvc
+      params:
+      - name: action
+        value: create
+      - name: output
+        value: |
+          - name: manifest
+            valueFrom: '{}'
+          - name: name
+            valueFrom: '{.metadata.name}'
+          - name: size
+            valueFrom: '{.status.capacity.storage}'
+      taskSpec:
+        params:
+        - description: Action on the resource
+          name: action
+          type: string
+        - default: strategic
+          description: Merge strategy when using action patch
+          name: merge-strategy
+          type: string
+        - default: ''
+          description: An express to retrieval data from resource.
+          name: output
+          type: string
+        - default: ''
+          description: A label selector express to decide if the action on resource
+            is success.
+          name: success-condition
+          type: string
+        - default: ''
+          description: A label selector express to decide if the action on resource
+            is failure.
+          name: failure-condition
+          type: string
+        - default: quay.io/aipipeline/kubectl-wrapper:latest
+          description: Kubectl wrapper image
+          name: image
+          type: string
+        - default: "false"
+          description: Enable set owner reference for created resource.
+          name: set-ownerreference
+          type: string
+        steps:
+        - command:
+          - kubeclient
+          args:
+          - --action=$(params.action)
+          - --merge-strategy=$(params.merge-strategy)
+          - |
+            --manifest=apiVersion: v1
+            kind: PersistentVolumeClaim
+            metadata:
+              name: $(PIPELINERUN)-pvc
+            spec:
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 1Gi
+          - --output=$(params.output)
+          - --success-condition=$(params.success-condition)
+          - --failure-condition=$(params.failure-condition)
+          - --set-ownerreference=$(params.set-ownerreference)
+          image: $(params.image)
+          name: main
+          resources: {}
+          env:
+          - name: PIPELINERUN
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['tekton.dev/pipelineRun']
+        results:
+        - name: manifest
+          type: string
+          description: '{}'
+        - name: name
+          type: string
+          description: '{.metadata.name}'
+        - name: size
+          type: string
+          description: '{.status.capacity.storage}'
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+    - name: download-dataset
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def download_dataset():
+                """
+                Downloads the cats_and_dogs dataset.
+                """
+
+                import os
+                import urllib.request
+                import zipfile
+
+                dataset_directory = os.path.join('/', 'pipeline', 'artifacts', 'dataset')
+                os.makedirs(dataset_directory)
+
+                url  = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'
+                file = os.path.basename(url)
+
+                urllib.request.urlretrieve(url, file)
+
+                with zipfile.ZipFile(file, 'r') as zip_file:
+
+                    zip_file.extractall(dataset_directory)
+
+                os.rename(os.path.join(dataset_directory, 'cats_and_dogs_filtered'), os.path.join(dataset_directory, 'cats_and_dogs'))
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Download dataset', description='Downloads the cats_and_dogs dataset.')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = download_dataset(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Download dataset",
+              "outputs": [], "version": "Download dataset@sha256=5ee687ff8096a498a65097946554f747cf44031d5622976ab3c11c14bcc27402"}'
+      runAfter:
+      - create-pvc
+    - name: prepare-dataset
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def prepare_dataset():
+                """
+                Prepares the cats_and_dogs dataset for training.
+                """
+
+                import os
+                import random
+                import shutil
+
+                dataset_directory                 = os.path.join('/', 'pipeline', 'artifacts', 'dataset', 'cats_and_dogs')
+                dataset_validation_directory      = os.path.join(dataset_directory, 'validation')
+                dataset_validation_cats_directory = os.path.join(dataset_validation_directory, 'cats')
+                dataset_validation_dogs_directory = os.path.join(dataset_validation_directory, 'dogs')
+                dataset_test_directory            = os.path.join(dataset_directory, 'test')
+                dataset_test_cats_directory       = os.path.join(dataset_test_directory, 'cats')
+                dataset_test_dogs_directory       = os.path.join(dataset_test_directory, 'dogs')
+
+                os.makedirs(dataset_test_cats_directory)
+                os.makedirs(dataset_test_dogs_directory)
+
+                number_of_files = 100
+
+                for _ in range(number_of_files):
+
+                    file = os.path.join(dataset_validation_cats_directory, random.choice(os.listdir(dataset_validation_cats_directory)))
+                    shutil.move(file, dataset_test_cats_directory)
+
+                    file = os.path.join(dataset_validation_dogs_directory, random.choice(os.listdir(dataset_validation_dogs_directory)))
+                    shutil.move(file, dataset_test_dogs_directory)
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Prepare dataset', description='Prepares the cats_and_dogs dataset for training.')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = prepare_dataset(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Prepare dataset",
+              "outputs": [], "version": "Prepare dataset@sha256=4f727a77c1ea2faf73f30778725ee236db5c7f3ba672fe7a11c6fb872847fe79"}'
+      runAfter:
+      - download-dataset
+    - name: create-model
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -c
+          - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+            'tensorflow==2.15.0' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip
+            install --quiet --no-warn-script-location 'tensorflow==2.15.0' --user)
+            && "$0" "$@"
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def create_model():
+                """
+                Creates the Convolutional Neural Network model for binary image classification.
+                """
+
+                import os
+                import tensorflow as tf
+
+                model_directory = os.path.join('/', 'pipeline', 'artifacts', 'model', 'cats_and_dogs')
+                os.makedirs(model_directory)
+
+                model = tf.keras.models.Sequential([
+                    tf.keras.layers.Rescaling(
+                        name        = 'layer_0',
+                        scale       = 1. / 255.,
+                        input_shape = (160, 160, 3)
+                    ),
+                    tf.keras.layers.Conv2D(
+                        name        = 'layer_1',
+                        filters     = 16,
+                        kernel_size = 3,
+                        activation  = 'relu'
+                    ),
+                    tf.keras.layers.MaxPooling2D(
+                        name = 'layer_2'
+                    ),
+                    tf.keras.layers.Conv2D(
+                        name        = 'layer_3',
+                        filters     = 32,
+                        kernel_size = 3,
+                        activation  = 'relu'
+                    ),
+                    tf.keras.layers.MaxPooling2D(
+                        name = 'layer_4'
+                    ),
+                    tf.keras.layers.Conv2D(
+                        name        = 'layer_5',
+                        filters     = 64,
+                        kernel_size = 3,
+                        activation  = 'relu'
+                    ),
+                    tf.keras.layers.MaxPooling2D(
+                        name = 'layer_6'
+                    ),
+                    tf.keras.layers.Flatten(
+                        name = 'layer_7'
+                    ),
+                    tf.keras.layers.Dense(
+                        name       = 'layer_8',
+                        units      = 128,
+                        activation = 'relu'
+                    ),
+                    tf.keras.layers.Dense(
+                        name       = 'layer_9',
+                        units      = 1,
+                        activation = 'sigmoid'
+                    )
+                ])
+
+                model.compile(
+                    loss      = 'binary_crossentropy',
+                    optimizer = 'adam',
+                    metrics   = ['accuracy']
+                )
+
+                model.summary()
+                model.save(model_directory)
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Create model', description='Creates the Convolutional Neural Network model for binary image classification.')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = create_model(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Create model",
+              "outputs": [], "version": "Create model@sha256=1f2d8f3567d751e484a27666dfaf44acbb4ef0083601a1c5b2a5fcc28fb7b717"}'
+      runAfter:
+      - create-pvc
+    - name: train-model
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -c
+          - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+            'tensorflow==2.15.0' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip
+            install --quiet --no-warn-script-location 'tensorflow==2.15.0' --user)
+            && "$0" "$@"
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def train_model():
+                """
+                Trains the model using the cats_and_dogs dataset.
+                """
+
+                import os
+                import tensorflow as tf
+
+                artifacts_directory          = os.path.join('/', 'pipeline', 'artifacts')
+                dataset_directory            = os.path.join(artifacts_directory, 'dataset', 'cats_and_dogs')
+                dataset_train_directory      = os.path.join(dataset_directory, 'train')
+                dataset_validation_directory = os.path.join(dataset_directory, 'validation')
+
+                image_size = (160, 160)
+
+                dataset_train = tf.keras.preprocessing.image_dataset_from_directory(
+                    directory  = dataset_train_directory,
+                    image_size = image_size
+                )
+
+                dataset_validation = tf.keras.preprocessing.image_dataset_from_directory(
+                    directory  = dataset_validation_directory,
+                    image_size = image_size
+                )
+
+                model_directory = os.path.join(artifacts_directory, 'model', 'cats_and_dogs')
+                model           = tf.keras.models.load_model(model_directory)
+
+                model.fit(
+                    dataset_train,
+                    validation_data = dataset_validation,
+                    epochs          = 10,
+                    verbose         = 2
+                )
+
+                model.save(model_directory)
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Train model', description='Trains the model using the cats_and_dogs dataset.')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = train_model(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Train model",
+              "outputs": [], "version": "Train model@sha256=b94e3961a247d6b34be890a7b3d86d201fc06b647bc3860a6fe825957c99553f"}'
+      runAfter:
+      - create-model
+      - prepare-dataset
+    - name: evaluate-model
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -c
+          - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+            'tensorflow==2.15.0' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip
+            install --quiet --no-warn-script-location 'tensorflow==2.15.0' --user)
+            && "$0" "$@"
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def evaluate_model():
+                """
+                Evaluates the model using the cats_and_dogs test dataset.
+                """
+
+                import os
+                import tensorflow as tf
+
+                artifacts_directory    = os.path.join('/', 'pipeline', 'artifacts')
+                dataset_test_directory = os.path.join(artifacts_directory, 'dataset', 'cats_and_dogs', 'test')
+
+                image_size = (160, 160)
+
+                dataset_test = tf.keras.preprocessing.image_dataset_from_directory(
+                    directory  = dataset_test_directory,
+                    image_size = image_size
+                )
+
+                model_directory = os.path.join(artifacts_directory, 'model', 'cats_and_dogs')
+                model           = tf.keras.models.load_model(model_directory)
+
+                model.evaluate(dataset_test, verbose = 2)
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Evaluate model', description='Evaluates the model using the cats_and_dogs test dataset.')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = evaluate_model(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Evaluate model",
+              "outputs": [], "version": "Evaluate model@sha256=38f6a58fae7db4b6a57d8bd48d51493e302712a04d738ea5122ca12affb60860"}'
+      runAfter:
+      - train-model
+    - name: upload-artifacts
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      - name: s3_access_key_id
+        value: $(params.s3_access_key_id)
+      - name: s3_bucket
+        value: $(params.s3_bucket)
+      - name: s3_endpoint_url
+        value: $(params.s3_endpoint_url)
+      - name: s3_region
+        value: $(params.s3_region)
+      - name: s3_secret_access_key
+        value: $(params.s3_secret_access_key)
+      - name: s3_service_name
+        value: $(params.s3_service_name)
+      taskSpec:
+        steps:
+        - name: main
+          args:
+          - --s3-service-name
+          - $(inputs.params.s3_service_name)
+          - --s3-endpoint-url
+          - $(inputs.params.s3_endpoint_url)
+          - --s3-access-key-id
+          - $(inputs.params.s3_access_key_id)
+          - --s3-secret-access-key
+          - $(inputs.params.s3_secret_access_key)
+          - --s3-region
+          - $(inputs.params.s3_region)
+          - --s3-bucket
+          - $(inputs.params.s3_bucket)
+          command:
+          - sh
+          - -c
+          - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+            'boto3==1.34.25' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install
+            --quiet --no-warn-script-location 'boto3==1.34.25' --user) && "$0" "$@"
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def upload_artifacts(
+                s3_service_name,
+                s3_endpoint_url,
+                s3_access_key_id,
+                s3_secret_access_key,
+                s3_region,
+                s3_bucket
+            ):
+                """
+                Uploads the pipeline artifacts to the s3 bucket.
+
+                Parameters:
+                    - s3_service_name      (str) : The name of the s3 service. It should be 's3'.
+                    - s3_endpoint_url      (str) : The url of the s3 endpoint.
+                    - s3_access_key_id     (str) : The access key id for authentication.
+                    - s3_secret_access_key (str) : The secret access key for authentication.
+                    - s3_region            (str) : The region where the s3 bucket is located.
+                    - s3_bucket            (str) : The s3 bucket where the directory will be uploaded.
+                """
+
+                import boto3
+                import os
+                import shutil
+
+                artifacts_directory = os.path.join('/', 'pipeline', 'artifacts')
+
+                file    = shutil.make_archive('artifacts', 'zip', artifacts_directory)
+                s3_file = os.path.basename(file)
+
+                s3_client = boto3.client(
+                    service_name          = s3_service_name,
+                    endpoint_url          = s3_endpoint_url,
+                    aws_access_key_id     = s3_access_key_id,
+                    aws_secret_access_key = s3_secret_access_key,
+                    region_name           = s3_region
+                )
+
+                s3_client.upload_file(file, s3_bucket, s3_file)
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Upload artifacts', description='Uploads the pipeline artifacts to the s3 bucket.')
+            _parser.add_argument("--s3-service-name", dest="s3_service_name", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-endpoint-url", dest="s3_endpoint_url", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-access-key-id", dest="s3_access_key_id", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-secret-access-key", dest="s3_secret_access_key", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-region", dest="s3_region", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-bucket", dest="s3_bucket", type=str, required=True, default=argparse.SUPPRESS)
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = upload_artifacts(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        - name: s3_access_key_id
+        - name: s3_bucket
+        - name: s3_endpoint_url
+        - name: s3_region
+        - name: s3_secret_access_key
+        - name: s3_service_name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Upload artifacts",
+              "outputs": [], "version": "Upload artifacts@sha256=6e684cbb887ccfae3431c99587712452692566c1c1bed197720e5b3dc90b6a54"}'
+      runAfter:
+      - evaluate-model
+    - name: upload-model
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      - name: s3_access_key_id
+        value: $(params.s3_access_key_id)
+      - name: s3_bucket
+        value: $(params.s3_bucket)
+      - name: s3_endpoint_url
+        value: $(params.s3_endpoint_url)
+      - name: s3_region
+        value: $(params.s3_region)
+      - name: s3_secret_access_key
+        value: $(params.s3_secret_access_key)
+      - name: s3_service_name
+        value: $(params.s3_service_name)
+      taskSpec:
+        steps:
+        - name: main
+          args:
+          - --s3-service-name
+          - $(inputs.params.s3_service_name)
+          - --s3-endpoint-url
+          - $(inputs.params.s3_endpoint_url)
+          - --s3-access-key-id
+          - $(inputs.params.s3_access_key_id)
+          - --s3-secret-access-key
+          - $(inputs.params.s3_secret_access_key)
+          - --s3-region
+          - $(inputs.params.s3_region)
+          - --s3-bucket
+          - $(inputs.params.s3_bucket)
+          command:
+          - sh
+          - -c
+          - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+            'boto3==1.34.25' 'openvino==2023.2.0' || PIP_DISABLE_PIP_VERSION_CHECK=1
+            python3 -m pip install --quiet --no-warn-script-location 'boto3==1.34.25'
+            'openvino==2023.2.0' --user) && "$0" "$@"
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def upload_model(
+                s3_service_name,
+                s3_endpoint_url,
+                s3_access_key_id,
+                s3_secret_access_key,
+                s3_region,
+                s3_bucket
+            ):
+                """
+                Uploads the model for deployment in the OpenVINO format.
+
+                Parameters:
+                    - s3_service_name      (str) : The name of the s3 service. It should be 's3'.
+                    - s3_endpoint_url      (str) : The url of the s3 endpoint.
+                    - s3_access_key_id     (str) : The access key id for authentication.
+                    - s3_secret_access_key (str) : The secret access key for authentication.
+                    - s3_region            (str) : The region where the s3 bucket is located.
+                    - s3_bucket            (str) : The s3 bucket where the directory will be uploaded.
+                """
+
+                import boto3
+                import openvino as ov
+                import os
+
+                model_directory    = os.path.join('/', 'pipeline', 'artifacts', 'model', 'cats_and_dogs')
+                s3_model_directory = os.path.join('models', 'cats_and_dogs', '0')
+
+                ov_model_directory = os.path.join('/', 'tmp', 'model')
+                ov_model_file      = os.path.join(ov_model_directory, 'model.xml')
+
+                os.makedirs(ov_model_directory)
+
+                ov_model = ov.convert_model(model_directory, input = ('layer_0_input', [1, 160, 160, 3], ov.Type.f32))
+                ov.save_model(ov_model, ov_model_file)
+
+                s3_client = boto3.client(
+                    service_name          = s3_service_name,
+                    endpoint_url          = s3_endpoint_url,
+                    aws_access_key_id     = s3_access_key_id,
+                    aws_secret_access_key = s3_secret_access_key,
+                    region_name           = s3_region
+                )
+
+                for file in os.listdir(ov_model_directory):
+
+                    s3_file = os.path.join(s3_model_directory, file)
+                    file    = os.path.join(ov_model_directory, file)
+
+                    s3_client.upload_file(file, s3_bucket, s3_file)
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Upload model', description='Uploads the model for deployment in the OpenVINO format.')
+            _parser.add_argument("--s3-service-name", dest="s3_service_name", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-endpoint-url", dest="s3_endpoint_url", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-access-key-id", dest="s3_access_key_id", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-secret-access-key", dest="s3_secret_access_key", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-region", dest="s3_region", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--s3-bucket", dest="s3_bucket", type=str, required=True, default=argparse.SUPPRESS)
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = upload_model(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        - name: s3_access_key_id
+        - name: s3_bucket
+        - name: s3_endpoint_url
+        - name: s3_region
+        - name: s3_secret_access_key
+        - name: s3_service_name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Upload model",
+              "outputs": [], "version": "Upload model@sha256=8ac55bf3dc70b7cb85e31aa33ff9081690f6808be9ddc982f1c8c46c02e76c48"}'
+      runAfter:
+      - evaluate-model
+    - name: delete-artifacts
+      params:
+      - name: create-pvc-name
+        value: $(tasks.create-pvc.results.name)
+      taskSpec:
+        steps:
+        - name: main
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def delete_artifacts():
+                """
+                Deletes the pipeline artifacts.
+                """
+
+                import os
+                import shutil
+
+                shutil.rmtree(os.path.join('/', 'pipeline', 'artifacts'))
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Delete artifacts', description='Deletes the pipeline artifacts.')
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = delete_artifacts(**_parsed_args)
+          image: registry.access.redhat.com/ubi9/python-311
+          volumeMounts:
+          - mountPath: /pipeline
+            name: create-pvc
+        params:
+        - name: create-pvc-name
+        volumes:
+        - name: create-pvc
+          persistentVolumeClaim:
+            claimName: $(inputs.params.create-pvc-name)
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Delete artifacts",
+              "outputs": [], "version": "Delete artifacts@sha256=f6a3f3dae7c7805074982769a0f6101981949a0932e691a5821c3acfae99a455"}'
+      runAfter:
+      - upload-model
+      - upload-artifacts

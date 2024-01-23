@@ -1,0 +1,304 @@
+{
+  "doc_type": "pipeline",
+  "version": "3.0",
+  "json_schema": "http://api.dataplatform.ibm.com/schemas/common-pipeline/pipeline-flow/pipeline-flow-v3-schema.json",
+  "id": "elyra-auto-generated-pipeline",
+  "primary_pipeline": "primary",
+  "pipelines": [
+    {
+      "id": "primary",
+      "nodes": [
+        {
+          "id": "d23d3fcc-dbf5-4dac-9e55-7c456d3353ed",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "pipeline_parameters": [
+                "name"
+              ],
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [
+                "create_hello_world_message.json"
+              ],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/create_hello_world_message.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "create_hello_world_message.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 220,
+              "y_pos": 300,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              }
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "f3216cdd-3272-4c56-8526-6c09318cfbc0",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "pipeline_parameters": [
+                "minimum",
+                "maximum"
+              ],
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [
+                "create_random_number.json"
+              ],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/create_random_number.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "create_random_number.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 220,
+              "y_pos": 430,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              }
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "b5e824ca-b576-4f5c-aaf1-13d6fe33806d",
+          "type": "execution_node",
+          "op": "execute-python-node",
+          "app_data": {
+            "component_parameters": {
+              "dependencies": [],
+              "include_subdirectories": false,
+              "outputs": [
+                "create_odds_or_evens_message.json"
+              ],
+              "env_vars": [],
+              "kubernetes_pod_annotations": [],
+              "kubernetes_pod_labels": [],
+              "kubernetes_secrets": [],
+              "kubernetes_shared_mem_size": {},
+              "kubernetes_tolerations": [],
+              "mounted_volumes": [],
+              "filename": "../components/create_odds_or_evens_message.py"
+            },
+            "label": "",
+            "ui_data": {
+              "label": "create_odds_or_evens_message.py",
+              "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
+              "x_pos": 580,
+              "y_pos": 300,
+              "description": "Run Python script"
+            }
+          },
+          "inputs": [
+            {
+              "id": "inPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Input Port"
+                }
+              },
+              "links": [
+                {
+                  "id": "0aa9f279-511c-4cd6-9604-6001412d206d",
+                  "node_id_ref": "d23d3fcc-dbf5-4dac-9e55-7c456d3353ed",
+                  "port_id_ref": "outPort"
+                },
+                {
+                  "id": "738620c7-5012-4baa-8324-246dfaacd027",
+                  "node_id_ref": "f3216cdd-3272-4c56-8526-6c09318cfbc0",
+                  "port_id_ref": "outPort"
+                }
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "id": "outPort",
+              "app_data": {
+                "ui_data": {
+                  "cardinality": {
+                    "min": 0,
+                    "max": -1
+                  },
+                  "label": "Output Port"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "app_data": {
+        "ui_data": {
+          "comments": [
+            {
+              "id": "806fd204-6ce1-4b38-8cfd-cd8913365b37",
+              "x_pos": 20,
+              "y_pos": 20,
+              "width": 380,
+              "height": 180,
+              "content": "**create_hello_world_message.py**\n\n**Creates a personalized greeting message for the given name.**\n\nPipeline parameters:\n* name (str)\n\nOutputs:\n* hello_world_message (str)",
+              "associated_id_refs": [
+                {
+                  "id": "3df7ee0f-0a0d-4144-b01f-d03aac0967de",
+                  "node_ref": "d23d3fcc-dbf5-4dac-9e55-7c456d3353ed"
+                }
+              ]
+            },
+            {
+              "id": "b705e262-7513-45aa-a76f-3bc4ab869bb1",
+              "x_pos": 20,
+              "y_pos": 560,
+              "width": 380,
+              "height": 210,
+              "content": "**create_random_number.py**\n\n**Creates a random integer within the specified range, minimum and maximum, both included.**\n\nPipeline parameters:\n* minimum (int)\n* maximum (int)\n\nOutputs:\n* random_number (int)",
+              "associated_id_refs": [
+                {
+                  "id": "251e118f-cb12-40a2-9715-64296217faed",
+                  "node_ref": "f3216cdd-3272-4c56-8526-6c09318cfbc0"
+                }
+              ]
+            },
+            {
+              "id": "ad3e7699-dc33-4924-925e-d7532b9a478d",
+              "x_pos": 540,
+              "y_pos": 20,
+              "width": 380,
+              "height": 210,
+              "content": "**create_odds_or_evens_message.py**\n\n**Creates a game result message based on the given random number, containing the given hello world message.**\n\nInputs:\n* hello_world_message (str)\n* random_number (int)\n\nOutputs:\n* odds_or_evens_message (str)",
+              "associated_id_refs": [
+                {
+                  "id": "6cc8e61d-1824-4c15-8557-9a4e95306dfc",
+                  "node_ref": "b5e824ca-b576-4f5c-aaf1-13d6fe33806d"
+                }
+              ]
+            }
+          ]
+        },
+        "version": 8,
+        "runtime_type": "KUBEFLOW_PIPELINES",
+        "properties": {
+          "name": "01_hello_world",
+          "runtime": "Data Science Pipelines",
+          "pipeline_defaults": {
+            "kubernetes_tolerations": [],
+            "kubernetes_shared_mem_size": {},
+            "kubernetes_pod_annotations": [],
+            "kubernetes_pod_labels": [],
+            "mounted_volumes": [],
+            "env_vars": [],
+            "kubernetes_secrets": [],
+            "cos_object_prefix": "ml_pipelines/01_hello_world",
+            "runtime_image": "quay.io/modh/runtime-images@sha256:58d45c4313097ccc4a8f2c81b30a5861cb51f0aa468a3bb66c5bb1ef16526c6b"
+          },
+          "description": "Hello World Pipeline",
+          "pipeline_parameters": [
+            {
+              "name": "name",
+              "description": "The name for which the message is created.",
+              "default_value": {
+                "type": "String",
+                "value": "ML Pipelines"
+              },
+              "required": true
+            },
+            {
+              "name": "minimum",
+              "description": "The inclusive lower bound of the random number range.",
+              "default_value": {
+                "type": "Integer",
+                "value": 1
+              },
+              "required": true
+            },
+            {
+              "name": "maximum",
+              "description": "The inclusive upper bound of the random number range.",
+              "default_value": {
+                "type": "Integer",
+                "value": 100
+              },
+              "required": true
+            }
+          ]
+        }
+      },
+      "runtime_ref": ""
+    }
+  ],
+  "schemas": []
+}
