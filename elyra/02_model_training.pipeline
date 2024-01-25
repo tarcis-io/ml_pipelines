@@ -499,7 +499,6 @@
           "type": "execution_node",
           "op": "execute-python-node",
           "app_data": {
-            "label": "",
             "component_parameters": {
               "dependencies": [],
               "include_subdirectories": false,
@@ -513,6 +512,7 @@
               "mounted_volumes": [],
               "filename": "../components/delete_artifacts.py"
             },
+            "label": "",
             "ui_data": {
               "label": "delete_artifacts.py",
               "image": "/notebook/ml-pipelines/my-workbench/static/elyra/python.svg",
@@ -686,10 +686,7 @@
           "name": "02_model_training",
           "runtime": "Data Science Pipelines",
           "pipeline_defaults": {
-            "kubernetes_tolerations": [],
             "kubernetes_shared_mem_size": {},
-            "kubernetes_pod_annotations": [],
-            "kubernetes_pod_labels": [],
             "mounted_volumes": [
               {
                 "path": "/pipeline",
@@ -697,8 +694,11 @@
                 "read_only": false
               }
             ],
-            "env_vars": [],
+            "kubernetes_pod_annotations": [],
+            "kubernetes_tolerations": [],
+            "kubernetes_pod_labels": [],
             "kubernetes_secrets": [],
+            "env_vars": [],
             "runtime_image": "quay.io/modh/runtime-images@sha256:58d45c4313097ccc4a8f2c81b30a5861cb51f0aa468a3bb66c5bb1ef16526c6b",
             "cos_object_prefix": "ml_pipelines/02_model_training"
           },

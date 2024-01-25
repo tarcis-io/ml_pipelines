@@ -255,13 +255,13 @@
           "name": "01_hello_world",
           "runtime": "Data Science Pipelines",
           "pipeline_defaults": {
-            "kubernetes_tolerations": [],
             "kubernetes_shared_mem_size": {},
-            "kubernetes_pod_annotations": [],
-            "kubernetes_pod_labels": [],
             "mounted_volumes": [],
-            "env_vars": [],
+            "kubernetes_pod_annotations": [],
+            "kubernetes_tolerations": [],
+            "kubernetes_pod_labels": [],
             "kubernetes_secrets": [],
+            "env_vars": [],
             "cos_object_prefix": "ml_pipelines/01_hello_world",
             "runtime_image": "quay.io/modh/runtime-images@sha256:58d45c4313097ccc4a8f2c81b30a5861cb51f0aa468a3bb66c5bb1ef16526c6b"
           },
