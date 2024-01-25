@@ -58,7 +58,7 @@ if __name__ == '__main__':
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.27'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.28'])
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'openvino==2023.3.0'])
 
     upload_model(

@@ -47,7 +47,7 @@ if __name__ == '__main__':
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.27'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.28'])
 
     upload_artifacts(
         s3_service_name      = os.getenv('s3_service_name'),
