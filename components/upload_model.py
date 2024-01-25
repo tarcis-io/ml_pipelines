@@ -23,7 +23,7 @@ def upload_model(
     import os
 
     model_directory    = os.path.join('/', 'pipeline', 'artifacts', 'model', 'cats_and_dogs')
-    s3_model_directory = os.path.join('models', 'cats_and_dogs', '0')
+    s3_model_directory = os.path.join('02_model_training', 'models', 'cats_and_dogs')
 
     ov_model_directory = os.path.join('/', 'tmp', 'model')
     ov_model_file      = os.path.join(ov_model_directory, 'model.xml')
@@ -58,8 +58,8 @@ if __name__ == '__main__':
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.25'])
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'openvino==2023.2.0'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.27'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'openvino==2023.3.0'])
 
     upload_model(
         s3_service_name      = os.getenv('s3_service_name'),

@@ -563,8 +563,8 @@ spec:
           - sh
           - -c
           - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
-            'boto3==1.34.25' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install
-            --quiet --no-warn-script-location 'boto3==1.34.25' --user) && "$0" "$@"
+            'boto3==1.34.27' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install
+            --quiet --no-warn-script-location 'boto3==1.34.27' --user) && "$0" "$@"
           - sh
           - -ec
           - |
@@ -599,7 +599,7 @@ spec:
                 artifacts_directory = os.path.join('/', 'pipeline', 'artifacts')
 
                 file    = shutil.make_archive('artifacts', 'zip', artifacts_directory)
-                s3_file = os.path.basename(file)
+                s3_file = os.path.join('02_model_training', os.path.basename(file))
 
                 s3_client = boto3.client(
                     service_name          = s3_service_name,
@@ -643,7 +643,7 @@ spec:
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Upload artifacts",
-              "outputs": [], "version": "Upload artifacts@sha256=6e684cbb887ccfae3431c99587712452692566c1c1bed197720e5b3dc90b6a54"}'
+              "outputs": [], "version": "Upload artifacts@sha256=1ac629a46a5721a45f5d18548283adf54f28a6cae7eac510444b4dbddb246f88"}'
       runAfter:
       - evaluate-model
     - name: upload-model
@@ -682,9 +682,9 @@ spec:
           - sh
           - -c
           - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
-            'boto3==1.34.25' 'openvino==2023.2.0' || PIP_DISABLE_PIP_VERSION_CHECK=1
-            python3 -m pip install --quiet --no-warn-script-location 'boto3==1.34.25'
-            'openvino==2023.2.0' --user) && "$0" "$@"
+            'boto3==1.34.27' 'openvino==2023.3.0' || PIP_DISABLE_PIP_VERSION_CHECK=1
+            python3 -m pip install --quiet --no-warn-script-location 'boto3==1.34.27'
+            'openvino==2023.3.0' --user) && "$0" "$@"
           - sh
           - -ec
           - |
@@ -717,7 +717,7 @@ spec:
                 import os
 
                 model_directory    = os.path.join('/', 'pipeline', 'artifacts', 'model', 'cats_and_dogs')
-                s3_model_directory = os.path.join('models', 'cats_and_dogs', '0')
+                s3_model_directory = os.path.join('02_model_training', 'models', 'cats_and_dogs')
 
                 ov_model_directory = os.path.join('/', 'tmp', 'model')
                 ov_model_file      = os.path.join(ov_model_directory, 'model.xml')
@@ -774,7 +774,7 @@ spec:
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Upload model",
-              "outputs": [], "version": "Upload model@sha256=8ac55bf3dc70b7cb85e31aa33ff9081690f6808be9ddc982f1c8c46c02e76c48"}'
+              "outputs": [], "version": "Upload model@sha256=2e6cc3ba1a6cf1dd9e9ba8afb1068b1029e6a03f69df3c74e1dc3459fd98aa2c"}'
       runAfter:
       - evaluate-model
     - name: delete-artifacts

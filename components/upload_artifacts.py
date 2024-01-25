@@ -25,7 +25,7 @@ def upload_artifacts(
     artifacts_directory = os.path.join('/', 'pipeline', 'artifacts')
 
     file    = shutil.make_archive('artifacts', 'zip', artifacts_directory)
-    s3_file = os.path.basename(file)
+    s3_file = os.path.join('02_model_training', os.path.basename(file))
 
     s3_client = boto3.client(
         service_name          = s3_service_name,
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     import subprocess
     import sys
 
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.25'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'boto3==1.34.27'])
 
     upload_artifacts(
         s3_service_name      = os.getenv('s3_service_name'),
