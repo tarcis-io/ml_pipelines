@@ -10,14 +10,14 @@ def download_dataset():
     dataset_directory = os.path.join('/', 'pipeline', 'artifacts', 'dataset')
     os.makedirs(dataset_directory)
 
-    url  = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'
-    file = os.path.basename(url)
+    dataset_url  = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'
+    dataset_file = os.path.basename(dataset_url)
 
-    urllib.request.urlretrieve(url, file)
+    urllib.request.urlretrieve(dataset_url, dataset_file)
 
-    with zipfile.ZipFile(file, 'r') as zip_file:
+    with zipfile.ZipFile(dataset_file, 'r') as dataset_zipfile:
 
-        zip_file.extractall(dataset_directory)
+        dataset_zipfile.extractall(dataset_directory)
 
     os.rename(os.path.join(dataset_directory, 'cats_and_dogs_filtered'), os.path.join(dataset_directory, 'cats_and_dogs'))
 
