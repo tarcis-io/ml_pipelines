@@ -326,31 +326,13 @@
                 "s3_access_key_id",
                 "s3_secret_access_key",
                 "s3_region",
-                "s3_bucket"
+                "s3_bucket",
+                "pipeline_name"
               ],
               "dependencies": [],
               "include_subdirectories": false,
               "outputs": [],
-              "env_vars": [
-                {
-                  "env_var": "s3_service_name"
-                },
-                {
-                  "env_var": "s3_endpoint_url"
-                },
-                {
-                  "env_var": "s3_access_key_id"
-                },
-                {
-                  "env_var": "s3_secret_access_key"
-                },
-                {
-                  "env_var": "s3_region"
-                },
-                {
-                  "env_var": "s3_bucket"
-                }
-              ],
+              "env_vars": [],
               "kubernetes_pod_annotations": [],
               "kubernetes_pod_labels": [],
               "kubernetes_secrets": [],
@@ -416,31 +398,13 @@
                 "s3_access_key_id",
                 "s3_secret_access_key",
                 "s3_region",
-                "s3_bucket"
+                "s3_bucket",
+                "pipeline_name"
               ],
               "dependencies": [],
               "include_subdirectories": false,
               "outputs": [],
-              "env_vars": [
-                {
-                  "env_var": "s3_service_name"
-                },
-                {
-                  "env_var": "s3_endpoint_url"
-                },
-                {
-                  "env_var": "s3_access_key_id"
-                },
-                {
-                  "env_var": "s3_secret_access_key"
-                },
-                {
-                  "env_var": "s3_region"
-                },
-                {
-                  "env_var": "s3_bucket"
-                }
-              ],
+              "env_vars": [],
               "kubernetes_pod_annotations": [],
               "kubernetes_pod_labels": [],
               "kubernetes_secrets": [],
@@ -642,7 +606,7 @@
               "y_pos": 20,
               "width": 380,
               "height": 200,
-              "content": "**upload_artifacts.py**\n\n**Uploads the pipeline artifacts to the s3 bucket.**\n\nPipeline parameters:\n* s3_service_name (str)\n* s3_endpoint_url (str)\n* s3_access_key_id (str)\n* s3_secret_access_key (str)\n* s3_region (str)\n* s3_bucket (str)",
+              "content": "**upload_artifacts.py**\n\n**Uploads the pipeline artifacts to the s3 bucket.**\n\nPipeline parameters:\n* s3_service_name (str)\n* s3_endpoint_url (str)\n* s3_access_key_id (str)\n* s3_secret_access_key (str)\n* s3_region (str)\n* s3_bucket (str)\n* pipeline_name (str)",
               "associated_id_refs": [
                 {
                   "id": "a6feb8ea-ff9d-4a21-8d9a-691c5129e8ac",
@@ -656,7 +620,7 @@
               "y_pos": 580,
               "width": 380,
               "height": 200,
-              "content": "**upload_model.py**\n\n**Uploads the model for deployment in the OpenVINO format.**\n\nPipeline parameters:\n* s3_service_name (str)\n* s3_endpoint_url (str)\n* s3_access_key_id (str)\n* s3_secret_access_key (str)\n* s3_region (str)\n* s3_bucket (str)",
+              "content": "**upload_model.py**\n\n**Uploads the model for deployment in the OpenVINO format.**\n\nPipeline parameters:\n* s3_service_name (str)\n* s3_endpoint_url (str)\n* s3_access_key_id (str)\n* s3_secret_access_key (str)\n* s3_region (str)\n* s3_bucket (str)\n* pipeline_name (str)",
               "associated_id_refs": [
                 {
                   "id": "e3a3bd2a-7f5c-4aa9-b573-bfe406517633",
@@ -686,7 +650,7 @@
           "name": "02_model_training",
           "runtime": "Data Science Pipelines",
           "pipeline_defaults": {
-            "kubernetes_shared_mem_size": {},
+            "kubernetes_tolerations": [],
             "mounted_volumes": [
               {
                 "path": "/pipeline",
@@ -695,10 +659,10 @@
               }
             ],
             "kubernetes_pod_annotations": [],
-            "kubernetes_tolerations": [],
             "kubernetes_pod_labels": [],
-            "kubernetes_secrets": [],
+            "kubernetes_shared_mem_size": {},
             "env_vars": [],
+            "kubernetes_secrets": [],
             "runtime_image": "quay.io/modh/runtime-images@sha256:58d45c4313097ccc4a8f2c81b30a5861cb51f0aa468a3bb66c5bb1ef16526c6b",
             "cos_object_prefix": "ml_pipelines/02_model_training"
           },
@@ -751,10 +715,19 @@
             },
             {
               "name": "s3_bucket",
-              "description": "The s3 bucket where the directory will be uploaded.",
+              "description": "The s3 bucket.",
               "default_value": {
                 "type": "String",
                 "value": ""
+              },
+              "required": true
+            },
+            {
+              "name": "pipeline_name",
+              "description": "The name of the pipeline.",
+              "default_value": {
+                "type": "String",
+                "value": "02_model_training"
               },
               "required": true
             }

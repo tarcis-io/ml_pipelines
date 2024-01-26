@@ -559,6 +559,8 @@ spec:
           - $(inputs.params.s3_region)
           - --s3-bucket
           - $(inputs.params.s3_bucket)
+          - --pipeline-name
+          - 02_model_training
           command:
           - sh
           - -c
@@ -578,7 +580,8 @@ spec:
                 s3_access_key_id,
                 s3_secret_access_key,
                 s3_region,
-                s3_bucket
+                s3_bucket,
+                pipeline_name
             ):
                 """
                 Uploads the pipeline artifacts to the s3 bucket.
@@ -589,7 +592,8 @@ spec:
                     - s3_access_key_id     (str) : The access key id for authentication.
                     - s3_secret_access_key (str) : The secret access key for authentication.
                     - s3_region            (str) : The region where the s3 bucket is located.
-                    - s3_bucket            (str) : The s3 bucket where the directory will be uploaded.
+                    - s3_bucket            (str) : The s3 bucket where the artifacts will be uploaded.
+                    - pipeline_name        (str) : The name of the pipeline.
                 """
 
                 import boto3
@@ -599,7 +603,7 @@ spec:
                 artifacts_directory = os.path.join('/', 'pipeline', 'artifacts')
 
                 file    = shutil.make_archive('artifacts', 'zip', artifacts_directory)
-                s3_file = os.path.join('02_model_training', os.path.basename(file))
+                s3_file = os.path.join(pipeline_name, os.path.basename(file))
 
                 s3_client = boto3.client(
                     service_name          = s3_service_name,
@@ -619,6 +623,7 @@ spec:
             _parser.add_argument("--s3-secret-access-key", dest="s3_secret_access_key", type=str, required=True, default=argparse.SUPPRESS)
             _parser.add_argument("--s3-region", dest="s3_region", type=str, required=True, default=argparse.SUPPRESS)
             _parser.add_argument("--s3-bucket", dest="s3_bucket", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--pipeline-name", dest="pipeline_name", type=str, required=True, default=argparse.SUPPRESS)
             _parsed_args = vars(_parser.parse_args())
 
             _outputs = upload_artifacts(**_parsed_args)
@@ -643,7 +648,7 @@ spec:
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Upload artifacts",
-              "outputs": [], "version": "Upload artifacts@sha256=52c495aec5d143916d0ea567aa4bd30d4e7838f6625a6a3678226265389e95af"}'
+              "outputs": [], "version": "Upload artifacts@sha256=7523c0f090acb60d74f0b090e62675db91378b911178b402f01563f4d614f2a8"}'
       runAfter:
       - evaluate-model
     - name: upload-model
@@ -678,6 +683,8 @@ spec:
           - $(inputs.params.s3_region)
           - --s3-bucket
           - $(inputs.params.s3_bucket)
+          - --pipeline-name
+          - 02_model_training
           command:
           - sh
           - -c
@@ -698,10 +705,11 @@ spec:
                 s3_access_key_id,
                 s3_secret_access_key,
                 s3_region,
-                s3_bucket
+                s3_bucket,
+                pipeline_name
             ):
                 """
-                Uploads the model for deployment in the OpenVINO format.
+                Uploads the model for deployment in the OpenVINO format to the s3 bucket.
 
                 Parameters:
                     - s3_service_name      (str) : The name of the s3 service. It should be 's3'.
@@ -709,7 +717,8 @@ spec:
                     - s3_access_key_id     (str) : The access key id for authentication.
                     - s3_secret_access_key (str) : The secret access key for authentication.
                     - s3_region            (str) : The region where the s3 bucket is located.
-                    - s3_bucket            (str) : The s3 bucket where the directory will be uploaded.
+                    - s3_bucket            (str) : The s3 bucket where the model will be uploaded.
+                    - pipeline_name        (str) : The name of the pipeline.
                 """
 
                 import boto3
@@ -717,7 +726,7 @@ spec:
                 import os
 
                 model_directory    = os.path.join('/', 'pipeline', 'artifacts', 'model', 'cats_and_dogs')
-                s3_model_directory = os.path.join('02_model_training', 'models', 'cats_and_dogs')
+                s3_model_directory = os.path.join(pipeline_name, 'models', 'cats_and_dogs')
 
                 ov_model_directory = os.path.join('/', 'tmp', 'model')
                 ov_model_file      = os.path.join(ov_model_directory, 'model.xml')
@@ -743,13 +752,14 @@ spec:
                     s3_client.upload_file(file, s3_bucket, s3_file)
 
             import argparse
-            _parser = argparse.ArgumentParser(prog='Upload model', description='Uploads the model for deployment in the OpenVINO format.')
+            _parser = argparse.ArgumentParser(prog='Upload model', description='Uploads the model for deployment in the OpenVINO format to the s3 bucket.')
             _parser.add_argument("--s3-service-name", dest="s3_service_name", type=str, required=True, default=argparse.SUPPRESS)
             _parser.add_argument("--s3-endpoint-url", dest="s3_endpoint_url", type=str, required=True, default=argparse.SUPPRESS)
             _parser.add_argument("--s3-access-key-id", dest="s3_access_key_id", type=str, required=True, default=argparse.SUPPRESS)
             _parser.add_argument("--s3-secret-access-key", dest="s3_secret_access_key", type=str, required=True, default=argparse.SUPPRESS)
             _parser.add_argument("--s3-region", dest="s3_region", type=str, required=True, default=argparse.SUPPRESS)
             _parser.add_argument("--s3-bucket", dest="s3_bucket", type=str, required=True, default=argparse.SUPPRESS)
+            _parser.add_argument("--pipeline-name", dest="pipeline_name", type=str, required=True, default=argparse.SUPPRESS)
             _parsed_args = vars(_parser.parse_args())
 
             _outputs = upload_model(**_parsed_args)
@@ -774,7 +784,7 @@ spec:
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Upload model",
-              "outputs": [], "version": "Upload model@sha256=d55cc1b2a0f4f74025a302b4a6b19328e5023ee1321e2537dc3f7d89af54aaae"}'
+              "outputs": [], "version": "Upload model@sha256=1f53f85df4c0c835a5b00850a9e59213429233ed3fa4c682121e2511b96fb298"}'
       runAfter:
       - evaluate-model
     - name: delete-artifacts

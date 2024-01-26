@@ -4,7 +4,8 @@ def upload_artifacts(
     s3_access_key_id     : str,
     s3_secret_access_key : str,
     s3_region            : str,
-    s3_bucket            : str
+    s3_bucket            : str,
+    pipeline_name        : str
 ):
     """
     Uploads the pipeline artifacts to the s3 bucket.
@@ -15,7 +16,8 @@ def upload_artifacts(
         - s3_access_key_id     (str) : The access key id for authentication.
         - s3_secret_access_key (str) : The secret access key for authentication.
         - s3_region            (str) : The region where the s3 bucket is located.
-        - s3_bucket            (str) : The s3 bucket where the directory will be uploaded.
+        - s3_bucket            (str) : The s3 bucket where the artifacts will be uploaded.
+        - pipeline_name        (str) : The name of the pipeline.
     """
 
     import boto3
@@ -25,7 +27,7 @@ def upload_artifacts(
     artifacts_directory = os.path.join('/', 'pipeline', 'artifacts')
 
     file    = shutil.make_archive('artifacts', 'zip', artifacts_directory)
-    s3_file = os.path.join('02_model_training', os.path.basename(file))
+    s3_file = os.path.join(pipeline_name, os.path.basename(file))
 
     s3_client = boto3.client(
         service_name          = s3_service_name,
@@ -55,5 +57,6 @@ if __name__ == '__main__':
         s3_access_key_id     = os.getenv('s3_access_key_id'),
         s3_secret_access_key = os.getenv('s3_secret_access_key'),
         s3_region            = os.getenv('s3_region'),
-        s3_bucket            = os.getenv('s3_bucket')
+        s3_bucket            = os.getenv('s3_bucket'),
+        pipeline_name        = os.getenv('pipeline_name')
     )

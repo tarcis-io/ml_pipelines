@@ -4,10 +4,11 @@ def upload_model(
     s3_access_key_id     : str,
     s3_secret_access_key : str,
     s3_region            : str,
-    s3_bucket            : str
+    s3_bucket            : str,
+    pipeline_name        : str
 ):
     """
-    Uploads the model for deployment in the OpenVINO format.
+    Uploads the model for deployment in the OpenVINO format to the s3 bucket.
 
     Parameters:
         - s3_service_name      (str) : The name of the s3 service. It should be 's3'.
@@ -15,7 +16,8 @@ def upload_model(
         - s3_access_key_id     (str) : The access key id for authentication.
         - s3_secret_access_key (str) : The secret access key for authentication.
         - s3_region            (str) : The region where the s3 bucket is located.
-        - s3_bucket            (str) : The s3 bucket where the directory will be uploaded.
+        - s3_bucket            (str) : The s3 bucket where the model will be uploaded.
+        - pipeline_name        (str) : The name of the pipeline.
     """
 
     import boto3
@@ -23,7 +25,7 @@ def upload_model(
     import os
 
     model_directory    = os.path.join('/', 'pipeline', 'artifacts', 'model', 'cats_and_dogs')
-    s3_model_directory = os.path.join('02_model_training', 'models', 'cats_and_dogs')
+    s3_model_directory = os.path.join(pipeline_name, 'models', 'cats_and_dogs')
 
     ov_model_directory = os.path.join('/', 'tmp', 'model')
     ov_model_file      = os.path.join(ov_model_directory, 'model.xml')
@@ -67,5 +69,6 @@ if __name__ == '__main__':
         s3_access_key_id     = os.getenv('s3_access_key_id'),
         s3_secret_access_key = os.getenv('s3_secret_access_key'),
         s3_region            = os.getenv('s3_region'),
-        s3_bucket            = os.getenv('s3_bucket')
+        s3_bucket            = os.getenv('s3_bucket'),
+        pipeline_name        = os.getenv('pipeline_name')
     )
