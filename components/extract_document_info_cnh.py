@@ -49,5 +49,5 @@ def extract_document_info_cnh(document_file : str, tesseract_config : str):
 
     print('Nome: {}'.format(nome))
 
-    with open(document_file + 'ocr.txt', 'w') as doc:
+    with open(document_file + '.ocr.txt', 'w') as doc:
         doc.write(nome)

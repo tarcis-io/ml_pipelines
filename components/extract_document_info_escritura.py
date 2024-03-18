@@ -16,5 +16,5 @@ def extract_document_info_escritura(document_file : str, tesseract_config : str)
     ocr  = pytesseract.image_to_string(image, config = tesseract_config)
     print(ocr)
 
-    with open(document_file + 'ocr.txt', 'w') as doc:
+    with open(document_file + '.ocr.txt', 'w') as doc:
         doc.write(ocr)
