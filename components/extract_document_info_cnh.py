@@ -41,7 +41,7 @@ def extract_document_info_cnh(document_file : str, tesseract_config : str):
         if not any(word in ocr for word in ['nome', 'ome', 'nom']):
             continue
 
-        img  = image[y + 4:y + h - 4, x + 4: x + w - 4]
+        img  = image[y + 3:y + h - 4, x + 4: x + w - 6]
         img  = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         ocr  = pytesseract.image_to_string(img, config = tesseract_config)
         ocr  = list(filter(None, ocr.splitlines()))
