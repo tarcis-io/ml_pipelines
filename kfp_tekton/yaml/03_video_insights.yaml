@@ -1,6 +1,6 @@
 # PIPELINE DEFINITION
-# Name: 02-model-training
-# Description: Model Training Pipeline
+# Name: 03-video-insights
+# Description: Video Insights Pipeline
 # Inputs:
 #    s3_access_key_id: str
 #    s3_bucket: str
@@ -9,8 +9,6 @@
 #    s3_secret_access_key: str
 #    s3_service_name: str
 components:
-  comp-create-model:
-    executorLabel: exec-create-model
   comp-createpvc:
     executorLabel: exec-createpvc
     inputDefinitions:
@@ -82,14 +80,36 @@ components:
           description: Name of the PVC to delete. Supports passing a runtime-generated
             name, such as a name provided by ``kubernetes.CreatePvcOp().outputs['name']``.
           parameterType: STRING
-  comp-download-dataset:
-    executorLabel: exec-download-dataset
-  comp-evaluate-model:
-    executorLabel: exec-evaluate-model
-  comp-prepare-dataset:
-    executorLabel: exec-prepare-dataset
-  comp-train-model:
-    executorLabel: exec-train-model
+  comp-download-video:
+    executorLabel: exec-download-video
+    inputDefinitions:
+      parameters:
+        pipeline_name:
+          parameterType: STRING
+        s3_access_key_id:
+          parameterType: STRING
+        s3_bucket:
+          parameterType: STRING
+        s3_endpoint_url:
+          parameterType: STRING
+        s3_region:
+          parameterType: STRING
+        s3_secret_access_key:
+          parameterType: STRING
+        s3_service_name:
+          parameterType: STRING
+  comp-extract-audio:
+    executorLabel: exec-extract-audio
+  comp-extract-speeches:
+    executorLabel: exec-extract-speeches
+  comp-extract-summary:
+    executorLabel: exec-extract-summary
+  comp-prepare-video:
+    executorLabel: exec-prepare-video
+  comp-translate-english-portuguese:
+    executorLabel: exec-translate-english-portuguese
+  comp-translate-english-spanish:
+    executorLabel: exec-translate-english-spanish
   comp-upload-artifacts:
     executorLabel: exec-upload-artifacts
     inputDefinitions:
@@ -108,79 +128,8 @@ components:
           parameterType: STRING
         s3_service_name:
           parameterType: STRING
-  comp-upload-model:
-    executorLabel: exec-upload-model
-    inputDefinitions:
-      parameters:
-        pipeline_name:
-          parameterType: STRING
-        s3_access_key_id:
-          parameterType: STRING
-        s3_bucket:
-          parameterType: STRING
-        s3_endpoint_url:
-          parameterType: STRING
-        s3_region:
-          parameterType: STRING
-        s3_secret_access_key:
-          parameterType: STRING
-        s3_service_name:
-          parameterType: STRING
 deploymentSpec:
   executors:
-    exec-create-model:
-      container:
-        args:
-        - --executor_input
-        - '{{$}}'
-        - --function_to_execute
-        - create_model
-        command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'tensorflow==2.15.0'\
-          \ && \"$0\" \"$@\"\n"
-        - sh
-        - -ec
-        - 'program_path=$(mktemp -d)
-
-
-          printf "%s" "$0" > "$program_path/ephemeral_component.py"
-
-          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
-
-          '
-        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef create_model():\n    \"\"\"\n    Creates the Convolutional Neural\
-          \ Network model for binary image classification.\n    \"\"\"\n\n    import\
-          \ os\n    import tensorflow as tf\n\n    model_directory = os.path.join('/',\
-          \ 'pipeline', 'artifacts', 'model', 'cats_and_dogs')\n    os.makedirs(model_directory)\n\
-          \n    model = tf.keras.models.Sequential([\n        tf.keras.layers.Rescaling(\n\
-          \            name        = 'layer_0',\n            scale       = 1. / 255.,\n\
-          \            input_shape = (160, 160, 3)\n        ),\n        tf.keras.layers.Conv2D(\n\
-          \            name        = 'layer_1',\n            filters     = 16,\n \
-          \           kernel_size = 3,\n            activation  = 'relu'\n       \
-          \ ),\n        tf.keras.layers.MaxPooling2D(\n            name = 'layer_2'\n\
-          \        ),\n        tf.keras.layers.Conv2D(\n            name        =\
-          \ 'layer_3',\n            filters     = 32,\n            kernel_size = 3,\n\
-          \            activation  = 'relu'\n        ),\n        tf.keras.layers.MaxPooling2D(\n\
-          \            name = 'layer_4'\n        ),\n        tf.keras.layers.Conv2D(\n\
-          \            name        = 'layer_5',\n            filters     = 64,\n \
-          \           kernel_size = 3,\n            activation  = 'relu'\n       \
-          \ ),\n        tf.keras.layers.MaxPooling2D(\n            name = 'layer_6'\n\
-          \        ),\n        tf.keras.layers.Flatten(\n            name = 'layer_7'\n\
-          \        ),\n        tf.keras.layers.Dense(\n            name       = 'layer_8',\n\
-          \            units      = 128,\n            activation = 'relu'\n      \
-          \  ),\n        tf.keras.layers.Dense(\n            name       = 'layer_9',\n\
-          \            units      = 1,\n            activation = 'sigmoid'\n     \
-          \   )\n    ])\n\n    model.compile(\n        loss      = 'binary_crossentropy',\n\
-          \        optimizer = 'adam',\n        metrics   = ['accuracy']\n    )\n\n\
-          \    model.summary()\n    model.save(model_directory)\n\n"
-        image: registry.access.redhat.com/ubi9/python-311
     exec-createpvc:
       container:
         image: argostub/createpvc
@@ -217,20 +166,21 @@ deploymentSpec:
     exec-deletepvc:
       container:
         image: argostub/deletepvc
-    exec-download-dataset:
+    exec-download-video:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - download_dataset
+        - download_video
         command:
         - sh
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'boto3' && \"\
           $0\" \"$@\"\n"
         - sh
         - -ec
@@ -243,24 +193,70 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef download_dataset():\n    \"\"\"\n    Downloads the cats_and_dogs\
-          \ dataset.\n    \"\"\"\n\n    import os\n    import urllib.request\n   \
-          \ import zipfile\n\n    dataset_directory = os.path.join('/', 'pipeline',\
-          \ 'artifacts', 'dataset')\n    os.makedirs(dataset_directory)\n\n    dataset_url\
-          \  = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'\n\
-          \    dataset_file = os.path.basename(dataset_url)\n\n    urllib.request.urlretrieve(dataset_url,\
-          \ dataset_file)\n\n    with zipfile.ZipFile(dataset_file, 'r') as dataset_zipfile:\n\
-          \n        dataset_zipfile.extractall(dataset_directory)\n\n    os.rename(os.path.join(dataset_directory,\
-          \ 'cats_and_dogs_filtered'), os.path.join(dataset_directory, 'cats_and_dogs'))\n\
+          \ *\n\ndef download_video(\n    s3_service_name      : str,\n    s3_endpoint_url\
+          \      : str,\n    s3_access_key_id     : str,\n    s3_secret_access_key\
+          \ : str,\n    s3_region            : str,\n    s3_bucket            : str,\n\
+          \    pipeline_name        : str\n):\n    \"\"\"\n    Downloads the video\
+          \ from the s3 bucket.\n\n    Parameters:\n        - s3_service_name    \
+          \  (str) : The name of the s3 service. It should be 's3'.\n        - s3_endpoint_url\
+          \      (str) : The url of the s3 endpoint.\n        - s3_access_key_id \
+          \    (str) : The access key id for authentication.\n        - s3_secret_access_key\
+          \ (str) : The secret access key for authentication.\n        - s3_region\
+          \            (str) : The region where the s3 bucket is located.\n      \
+          \  - s3_bucket            (str) : The s3 bucket where the video will be\
+          \ downloaded.\n        - pipeline_name        (str) : The name of the pipeline.\n\
+          \    \"\"\"\n\n    import boto3\n    import os\n\n    artifacts_directory\
+          \ = os.path.join('/', 'pipeline', 'artifacts')\n    os.makedirs(artifacts_directory)\n\
+          \n    s3_video_file = os.path.join(pipeline_name, 'video.mp4')\n    video_file\
+          \    = os.path.join(artifacts_directory, os.path.basename(s3_video_file))\n\
+          \n    s3_client = boto3.client(\n        service_name          = s3_service_name,\n\
+          \        endpoint_url          = s3_endpoint_url,\n        aws_access_key_id\
+          \     = s3_access_key_id,\n        aws_secret_access_key = s3_secret_access_key,\n\
+          \        region_name           = s3_region\n    )\n\n    s3_client.download_file(s3_bucket,\
+          \ s3_video_file, video_file)\n\n"
+        image: registry.access.redhat.com/ubi9/python-311
+    exec-extract-audio:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - extract_audio
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'moviepy' &&\
+          \ \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef extract_audio():\n    \"\"\"\n    Extracts the audio from the\
+          \ video.\n    \"\"\"\n\n    import os\n    from moviepy.editor import VideoFileClip\n\
+          \n    artifacts_directory = os.path.join('/', 'pipeline', 'artifacts')\n\
+          \    video_file          = os.path.join(artifacts_directory, 'video.mp4')\n\
+          \    video_audio_file    = os.path.join(artifacts_directory, 'video_audio.mp3')\n\
+          \n    video_file_clip = VideoFileClip(video_file)\n    video_file_clip.audio.write_audiofile(video_audio_file)\n\
           \n"
         image: registry.access.redhat.com/ubi9/python-311
-    exec-evaluate-model:
+    exec-extract-speeches:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - evaluate_model
+        - extract_speeches
         command:
         - sh
         - -c
@@ -268,7 +264,7 @@ deploymentSpec:
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'tensorflow==2.15.0'\
+          \  python3 -m pip install --quiet --no-warn-script-location 'torch' 'transformers'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -281,24 +277,68 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef evaluate_model():\n    \"\"\"\n    Evaluates the model using\
-          \ the cats_and_dogs test dataset.\n    \"\"\"\n\n    import os\n    import\
-          \ tensorflow as tf\n\n    artifacts_directory    = os.path.join('/', 'pipeline',\
-          \ 'artifacts')\n    dataset_test_directory = os.path.join(artifacts_directory,\
-          \ 'dataset', 'cats_and_dogs', 'test')\n\n    image_size = (160, 160)\n\n\
-          \    dataset_test = tf.keras.preprocessing.image_dataset_from_directory(\n\
-          \        directory  = dataset_test_directory,\n        image_size = image_size\n\
-          \    )\n\n    model_directory = os.path.join(artifacts_directory, 'model',\
-          \ 'cats_and_dogs')\n    model           = tf.keras.models.load_model(model_directory)\n\
-          \n    model.evaluate(dataset_test, verbose = 2)\n\n"
+          \ *\n\ndef extract_speeches():\n    \"\"\"\n    Extracts the speeches from\
+          \ the video.\n    \"\"\"\n\n    import os\n    import tarfile\n    import\
+          \ urllib.request\n\n    from transformers import pipeline\n\n    ffmpeg_url\
+          \  = 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz'\n\
+          \    ffmpeg_file = os.path.basename(ffmpeg_url)\n\n    urllib.request.urlretrieve(ffmpeg_url,\
+          \ ffmpeg_file)\n\n    with tarfile.open(ffmpeg_file) as ffmpeg_tarfile:\n\
+          \n        ffmpeg_tarfile.extractall()\n\n    for directory in next(os.walk('.'))[1]:\n\
+          \n        if directory.startswith('ffmpeg'):\n\n            ffmpeg_directory\
+          \ = os.path.join(os.getcwd(), directory)\n            break\n\n    os.environ['PATH']\
+          \ += os.pathsep + ffmpeg_directory\n\n    artifacts_directory = os.path.join('/',\
+          \ 'pipeline', 'artifacts')\n    video_audio_file    = os.path.join(artifacts_directory,\
+          \ 'video_audio.mp3')\n    video_speeches_file = os.path.join(artifacts_directory,\
+          \ 'video_speeches.txt')\n\n    pipe     = pipeline(task = 'automatic-speech-recognition',\
+          \ model = 'openai/whisper-tiny')\n    speeches = pipe(video_audio_file)\n\
+          \n    with open(video_speeches_file, 'w') as file:\n\n        file.write(speeches['text'])\n\
+          \n"
         image: registry.access.redhat.com/ubi9/python-311
-    exec-prepare-dataset:
+    exec-extract-summary:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - prepare_dataset
+        - extract_summary
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'torch' 'transformers'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef extract_summary():\n    \"\"\"\n    Extracts the summary from\
+          \ the video.\n    \"\"\"\n\n    import os\n    from transformers import\
+          \ pipeline\n\n    artifacts_directory = os.path.join('/', 'pipeline', 'artifacts')\n\
+          \    video_speeches_file = os.path.join(artifacts_directory, 'video_speeches.txt')\n\
+          \    video_summary_file  = os.path.join(artifacts_directory, 'video_summary.txt')\n\
+          \n    with open(video_speeches_file, 'r') as file:\n\n        speeches =\
+          \ file.read()\n\n    pipe    = pipeline(task = 'summarization', model =\
+          \ 'sshleifer/distilbart-cnn-12-6')\n    summary = pipe(speeches)\n\n   \
+          \ with open(video_summary_file, 'w') as file:\n\n        file.write(summary[0]['summary_text'])\n\
+          \n"
+        image: registry.access.redhat.com/ubi9/python-311
+    exec-prepare-video:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - prepare_video
         command:
         - sh
         - -c
@@ -318,30 +358,16 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef prepare_dataset():\n    \"\"\"\n    Prepares the cats_and_dogs\
-          \ dataset for training.\n    \"\"\"\n\n    import os\n    import random\n\
-          \    import shutil\n\n    dataset_directory                 = os.path.join('/',\
-          \ 'pipeline', 'artifacts', 'dataset', 'cats_and_dogs')\n    dataset_validation_directory\
-          \      = os.path.join(dataset_directory, 'validation')\n    dataset_validation_cats_directory\
-          \ = os.path.join(dataset_validation_directory, 'cats')\n    dataset_validation_dogs_directory\
-          \ = os.path.join(dataset_validation_directory, 'dogs')\n    dataset_test_directory\
-          \            = os.path.join(dataset_directory, 'test')\n    dataset_test_cats_directory\
-          \       = os.path.join(dataset_test_directory, 'cats')\n    dataset_test_dogs_directory\
-          \       = os.path.join(dataset_test_directory, 'dogs')\n\n    os.makedirs(dataset_test_cats_directory)\n\
-          \    os.makedirs(dataset_test_dogs_directory)\n\n    number_of_files = 100\n\
-          \n    for _ in range(number_of_files):\n\n        file = os.path.join(dataset_validation_cats_directory,\
-          \ random.choice(os.listdir(dataset_validation_cats_directory)))\n      \
-          \  shutil.move(file, dataset_test_cats_directory)\n\n        file = os.path.join(dataset_validation_dogs_directory,\
-          \ random.choice(os.listdir(dataset_validation_dogs_directory)))\n      \
-          \  shutil.move(file, dataset_test_dogs_directory)\n\n"
+          \ *\n\ndef prepare_video():\n    \"\"\"\n    Prepares the video for extracting\
+          \ insights.\n    \"\"\"\n\n"
         image: registry.access.redhat.com/ubi9/python-311
-    exec-train-model:
+    exec-translate-english-portuguese:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - train_model
+        - translate_english_portuguese
         command:
         - sh
         - -c
@@ -349,7 +375,7 @@ deploymentSpec:
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'tensorflow==2.15.0'\
+          \  python3 -m pip install --quiet --no-warn-script-location 'torch' 'transformers'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -362,21 +388,55 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef train_model():\n    \"\"\"\n    Trains the model using the cats_and_dogs\
-          \ dataset.\n    \"\"\"\n\n    import os\n    import tensorflow as tf\n\n\
-          \    artifacts_directory          = os.path.join('/', 'pipeline', 'artifacts')\n\
-          \    dataset_directory            = os.path.join(artifacts_directory, 'dataset',\
-          \ 'cats_and_dogs')\n    dataset_train_directory      = os.path.join(dataset_directory,\
-          \ 'train')\n    dataset_validation_directory = os.path.join(dataset_directory,\
-          \ 'validation')\n\n    image_size = (160, 160)\n\n    dataset_train = tf.keras.preprocessing.image_dataset_from_directory(\n\
-          \        directory  = dataset_train_directory,\n        image_size = image_size\n\
-          \    )\n\n    dataset_validation = tf.keras.preprocessing.image_dataset_from_directory(\n\
-          \        directory  = dataset_validation_directory,\n        image_size\
-          \ = image_size\n    )\n\n    model_directory = os.path.join(artifacts_directory,\
-          \ 'model', 'cats_and_dogs')\n    model           = tf.keras.models.load_model(model_directory)\n\
-          \n    model.fit(\n        dataset_train,\n        validation_data = dataset_validation,\n\
-          \        epochs          = 10,\n        verbose         = 2\n    )\n\n \
-          \   model.save(model_directory)\n\n"
+          \ *\n\ndef translate_english_portuguese():\n    \"\"\"\n    Translates the\
+          \ summary of the video to portuguese.\n    \"\"\"\n\n    import os\n   \
+          \ from transformers import pipeline\n\n    artifacts_directory         \
+          \  = os.path.join('/', 'pipeline', 'artifacts')\n    video_summary_file\
+          \            = os.path.join(artifacts_directory, 'video_summary.txt')\n\
+          \    video_summary_portuguese_file = os.path.join(artifacts_directory, 'video_summary_portuguese.txt')\n\
+          \n    with open(video_summary_file, 'r') as file:\n\n        speeches =\
+          \ file.read()\n\n    pipe        = pipeline(task = 'translation', model\
+          \ = 'unicamp-dl/translation-en-pt-t5')\n    translation = pipe(speeches)\n\
+          \n    with open(video_summary_portuguese_file, 'w') as file:\n\n       \
+          \ file.write(translation[0]['translation_text'])\n\n"
+        image: registry.access.redhat.com/ubi9/python-311
+    exec-translate-english-spanish:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - translate_english_spanish
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'torch' 'sentencepiece'\
+          \ 'transformers' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef translate_english_spanish():\n    \"\"\"\n    Translates the\
+          \ summary of the video to spanish.\n    \"\"\"\n\n    import os\n    from\
+          \ transformers import pipeline\n\n    artifacts_directory        = os.path.join('/',\
+          \ 'pipeline', 'artifacts')\n    video_summary_file         = os.path.join(artifacts_directory,\
+          \ 'video_summary.txt')\n    video_summary_spanish_file = os.path.join(artifacts_directory,\
+          \ 'video_summary_spanish.txt')\n\n    with open(video_summary_file, 'r')\
+          \ as file:\n\n        speeches = file.read()\n\n    pipe        = pipeline(task\
+          \ = 'translation', model = 'Helsinki-NLP/opus-mt-en-es')\n    translation\
+          \ = pipe(speeches)\n\n    with open(video_summary_spanish_file, 'w') as\
+          \ file:\n\n        file.write(translation[0]['translation_text'])\n\n"
         image: registry.access.redhat.com/ubi9/python-311
     exec-upload-artifacts:
       container:
@@ -427,77 +487,12 @@ deploymentSpec:
           \        region_name           = s3_region\n    )\n\n    s3_client.upload_file(file,\
           \ s3_bucket, s3_file)\n\n"
         image: registry.access.redhat.com/ubi9/python-311
-    exec-upload-model:
-      container:
-        args:
-        - --executor_input
-        - '{{$}}'
-        - --function_to_execute
-        - upload_model
-        command:
-        - sh
-        - -c
-        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
-          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'boto3' 'openvino'\
-          \ && \"$0\" \"$@\"\n"
-        - sh
-        - -ec
-        - 'program_path=$(mktemp -d)
-
-
-          printf "%s" "$0" > "$program_path/ephemeral_component.py"
-
-          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
-
-          '
-        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef upload_model(\n    s3_service_name      : str,\n    s3_endpoint_url\
-          \      : str,\n    s3_access_key_id     : str,\n    s3_secret_access_key\
-          \ : str,\n    s3_region            : str,\n    s3_bucket            : str,\n\
-          \    pipeline_name        : str\n):\n    \"\"\"\n    Uploads the model for\
-          \ deployment in the OpenVINO format to the s3 bucket.\n\n    Parameters:\n\
-          \        - s3_service_name      (str) : The name of the s3 service. It should\
-          \ be 's3'.\n        - s3_endpoint_url      (str) : The url of the s3 endpoint.\n\
-          \        - s3_access_key_id     (str) : The access key id for authentication.\n\
-          \        - s3_secret_access_key (str) : The secret access key for authentication.\n\
-          \        - s3_region            (str) : The region where the s3 bucket is\
-          \ located.\n        - s3_bucket            (str) : The s3 bucket where the\
-          \ model will be uploaded.\n        - pipeline_name        (str) : The name\
-          \ of the pipeline.\n    \"\"\"\n\n    import boto3\n    import openvino\
-          \ as ov\n    import os\n\n    model_directory    = os.path.join('/', 'pipeline',\
-          \ 'artifacts', 'model', 'cats_and_dogs')\n    s3_model_directory = os.path.join(pipeline_name,\
-          \ 'models', 'cats_and_dogs')\n\n    ov_model_directory = os.path.join('/',\
-          \ 'tmp', 'model')\n    ov_model_file      = os.path.join(ov_model_directory,\
-          \ 'model.xml')\n\n    os.makedirs(ov_model_directory)\n\n    ov_model =\
-          \ ov.convert_model(model_directory, input = ('layer_0_input', [1, 160, 160,\
-          \ 3], ov.Type.f32))\n    ov.save_model(ov_model, ov_model_file)\n\n    s3_client\
-          \ = boto3.client(\n        service_name          = s3_service_name,\n  \
-          \      endpoint_url          = s3_endpoint_url,\n        aws_access_key_id\
-          \     = s3_access_key_id,\n        aws_secret_access_key = s3_secret_access_key,\n\
-          \        region_name           = s3_region\n    )\n\n    for file in os.listdir(ov_model_directory):\n\
-          \n        s3_file = os.path.join(s3_model_directory, file)\n        file\
-          \    = os.path.join(ov_model_directory, file)\n\n        s3_client.upload_file(file,\
-          \ s3_bucket, s3_file)\n\n"
-        image: registry.access.redhat.com/ubi9/python-311
 pipelineInfo:
-  description: Model Training Pipeline
-  name: 02-model-training
+  description: Video Insights Pipeline
+  name: 03-video-insights
 root:
   dag:
     tasks:
-      create-model:
-        cachingOptions:
-          enableCache: true
-        componentRef:
-          name: comp-create-model
-        dependentTasks:
-        - createpvc
-        - prepare-dataset
-        taskInfo:
-          name: create-model
       createpvc:
         cachingOptions:
           enableCache: true
@@ -526,9 +521,7 @@ root:
         componentRef:
           name: comp-delete-artifacts
         dependentTasks:
-        - createpvc
         - upload-artifacts
-        - upload-model
         taskInfo:
           name: delete-artifacts
       deletepvc:
@@ -547,45 +540,92 @@ root:
                 producerTask: createpvc
         taskInfo:
           name: deletepvc
-      download-dataset:
+      download-video:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-download-dataset
+          name: comp-download-video
         dependentTasks:
         - createpvc
+        inputs:
+          parameters:
+            pipeline_name:
+              runtimeValue:
+                constant: 03_video_insights
+            s3_access_key_id:
+              componentInputParameter: s3_access_key_id
+            s3_bucket:
+              componentInputParameter: s3_bucket
+            s3_endpoint_url:
+              componentInputParameter: s3_endpoint_url
+            s3_region:
+              componentInputParameter: s3_region
+            s3_secret_access_key:
+              componentInputParameter: s3_secret_access_key
+            s3_service_name:
+              componentInputParameter: s3_service_name
         taskInfo:
-          name: download-dataset
-      evaluate-model:
+          name: download-video
+      extract-audio:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-evaluate-model
+          name: comp-extract-audio
         dependentTasks:
         - createpvc
-        - train-model
+        - prepare-video
         taskInfo:
-          name: evaluate-model
-      prepare-dataset:
+          name: extract-audio
+      extract-speeches:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-prepare-dataset
+          name: comp-extract-speeches
         dependentTasks:
         - createpvc
-        - download-dataset
+        - extract-audio
         taskInfo:
-          name: prepare-dataset
-      train-model:
+          name: extract-speeches
+      extract-summary:
         cachingOptions:
           enableCache: true
         componentRef:
-          name: comp-train-model
+          name: comp-extract-summary
         dependentTasks:
-        - create-model
         - createpvc
+        - extract-speeches
         taskInfo:
-          name: train-model
+          name: extract-summary
+      prepare-video:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-prepare-video
+        dependentTasks:
+        - createpvc
+        - download-video
+        taskInfo:
+          name: prepare-video
+      translate-english-portuguese:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-translate-english-portuguese
+        dependentTasks:
+        - createpvc
+        - extract-summary
+        taskInfo:
+          name: translate-english-portuguese
+      translate-english-spanish:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-translate-english-spanish
+        dependentTasks:
+        - createpvc
+        - extract-summary
+        taskInfo:
+          name: translate-english-spanish
       upload-artifacts:
         cachingOptions:
           enableCache: true
@@ -593,12 +633,12 @@ root:
           name: comp-upload-artifacts
         dependentTasks:
         - createpvc
-        - evaluate-model
+        - translate-english-portuguese
         inputs:
           parameters:
             pipeline_name:
               runtimeValue:
-                constant: 02_model_training
+                constant: 03_video_insights
             s3_access_key_id:
               componentInputParameter: s3_access_key_id
             s3_bucket:
@@ -613,33 +653,6 @@ root:
               componentInputParameter: s3_service_name
         taskInfo:
           name: upload-artifacts
-      upload-model:
-        cachingOptions:
-          enableCache: true
-        componentRef:
-          name: comp-upload-model
-        dependentTasks:
-        - createpvc
-        - evaluate-model
-        inputs:
-          parameters:
-            pipeline_name:
-              runtimeValue:
-                constant: 02_model_training
-            s3_access_key_id:
-              componentInputParameter: s3_access_key_id
-            s3_bucket:
-              componentInputParameter: s3_bucket
-            s3_endpoint_url:
-              componentInputParameter: s3_endpoint_url
-            s3_region:
-              componentInputParameter: s3_region
-            s3_secret_access_key:
-              componentInputParameter: s3_secret_access_key
-            s3_service_name:
-              componentInputParameter: s3_service_name
-        taskInfo:
-          name: upload-model
   inputDefinitions:
     parameters:
       s3_access_key_id:
@@ -661,37 +674,37 @@ platforms:
   kubernetes:
     deploymentSpec:
       executors:
-        exec-create-model:
+        exec-extract-audio:
           pvcMount:
           - mountPath: /pipeline
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
-        exec-delete-artifacts:
+        exec-extract-speeches:
           pvcMount:
           - mountPath: /pipeline
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
-        exec-download-dataset:
+        exec-extract-summary:
           pvcMount:
           - mountPath: /pipeline
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
-        exec-evaluate-model:
+        exec-prepare-video:
           pvcMount:
           - mountPath: /pipeline
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
-        exec-prepare-dataset:
+        exec-translate-english-portuguese:
           pvcMount:
           - mountPath: /pipeline
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
-        exec-train-model:
+        exec-translate-english-spanish:
           pvcMount:
           - mountPath: /pipeline
             taskOutputParameter:
@@ -703,8 +716,6 @@ platforms:
             taskOutputParameter:
               outputParameterKey: name
               producerTask: createpvc
-        exec-upload-model:
-          pvcMount:
           - mountPath: /pipeline
             taskOutputParameter:
               outputParameterKey: name
